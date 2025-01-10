@@ -1,54 +1,63 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
 import './App.css';
+import { useTheme } from './context/ThemeContext';
+
+function ThemeToggleButton() {
+  const { theme, toggleTheme } = useTheme();
+
+  return (
+    <button
+      className="theme-toggle"
+      onClick={toggleTheme}
+      style={{
+        backgroundColor: theme.buttonBackground,
+        color: theme.buttonText
+      }}
+    >
+      {theme.backgroundColor === '#ffffff' ? '🌙' : '☀️'}
+    </button>
+  );
+}
+
+const COLOR_PALETTES = {
+  'Vibrant': ['#ff7875', '#ff9c6e', '#ffc069', '#ffd666', '#fff566', '#bae637', '#5cdbd3', '#69c0ff', '#85a5ff'],
+  'Cool': ['#8ecae6', '#219ebc', '#023047', '#ffb703', '#fb8500', '#126782', '#4895ef', '#457b9d', '#1a759f'],
+  'Warm': ['#cb997e', '#ddbea9', '#ffe8d6', '#b7b7a4', '#a5a58d', '#6b705c', '#e07a5f', '#f2cc8f', '#81b29a'],
+  'Pastel': ['#ffadad', '#ffd6a5', '#fdffb6', '#caffbf', '#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff', '#fffffc']
+};
 
 function App() {
+  const { theme, toggleTheme } = useTheme();
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [chartData, setChartData] = useState(null);
   const [analysis, setAnalysis] = useState(null);
-  const [selectedChartType, setSelectedChartType] = useState('auto');
-  const [selectedPalette, setSelectedPalette] = useState('default');
+  const [chartType, setChartType] = useState('bar');
+  const [colorPalette, setColorPalette] = useState('Vibrant');
 
-  const colorPalettes = {
-    default: {
-      primary: '#6b9ac4',
-      gradient: ['#6b9ac4', '#405f73']
-    },
-    vibrant: {
-      primary: '#ff6f61',
-      gradient: ['#ff6f61', '#ff3b3f']
-    },
-    pastel: {
-      primary: '#a8e6cf',
-      gradient: ['#a8e6cf', '#dcedc1']
-    }
-  };
-
-  const chartTypes = [
-    { id: 'auto', label: 'Auto-detect' },
-    { id: 'line', label: 'Line Chart' },
-    { id: 'bar', label: 'Bar Chart' },
-    { id: 'pie', label: 'Pie Chart' },
-    { id: 'scatter', label: 'Scatter Plot' }
-  ];
+  useEffect(() => {
+    document.body.style.backgroundColor = theme.backgroundColor;
+    document.body.style.color = theme.textColor;
+  }, [theme]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!query.trim()) return;
-    
+
     setLoading(true);
     setError('');
     setChartData(null);
     setAnalysis(null);
 
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL || "http://localhost:8000"}/query`, {
+      const apiUrl = "http://localhost:8000"; // Default API URL
+      const response = await axios.post(`${apiUrl}/query`, {
         text: query,
-        chart_type: selectedChartType === 'auto' ? null : selectedChartType
+        chart_type: chartType === 'auto' ? null : chartType
       });
 
       if (response.data.status === "success") {
@@ -70,84 +79,36 @@ function App() {
 
   const getChartOptions = useCallback(() => {
     if (!chartData) return {};
-    
-    const currentPalette = colorPalettes[selectedPalette];
-    
-    // Handle card display
-    if (chartData.type === "card") {
-      return {
-        title: {
-          text: 'Data Summary',
-          left: 'center',
-          textStyle: {
-            color: '#fff',
-            fontSize: 18
-          }
-        },
-        graphic: {
-          type: 'text',
-          left: 'center',
-          top: 'center',
-          style: {
-            text: chartData.content,
-            fontSize: 24,
-            fill: currentPalette.primary,
-            textAlign: 'center'
-          }
-        }
-      };
-    }
 
-    // Common options for all charts
     const baseOptions = {
       backgroundColor: 'transparent',
       textStyle: {
-        color: '#fff'
+        color: theme.textColor
       },
       tooltip: {
-        trigger: 'item',
-        backgroundColor: 'rgba(0,0,0,0.8)'
+        trigger: 'axis',
+        backgroundColor: theme.buttonBackground,
+        borderColor: theme.borderColor,
+        textStyle: {
+          color: theme.textColor
+        }
       },
       legend: {
         textStyle: {
-          color: '#fff'
+          color: theme.textColor
         }
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
       }
     };
 
     // Handle different chart types
     switch (chartData.series[0].type) {
       case "line":
-        return {
-          ...baseOptions,
-          xAxis: {
-            ...chartData.xAxis,
-            axisLine: {
-              lineStyle: {
-                color: '#fff'
-              }
-            }
-          },
-          yAxis: {
-            ...chartData.yAxis,
-            axisLine: {
-              lineStyle: {
-                color: '#fff'
-              }
-            }
-          },
-          series: chartData.series.map(s => ({
-            ...s,
-            lineStyle: { width: 3, color: currentPalette.primary },
-            areaStyle: {
-              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: currentPalette.gradient[0] },
-                { offset: 1, color: currentPalette.gradient[1] }
-              ])
-            }
-          }))
-        };
-
       case "bar":
         return {
           ...baseOptions,
@@ -155,7 +116,15 @@ function App() {
             ...chartData.xAxis,
             axisLine: {
               lineStyle: {
-                color: '#fff'
+                color: theme.textColor
+              }
+            },
+            axisLabel: {
+              color: theme.textColor
+            },
+            splitLine: {
+              lineStyle: {
+                color: theme.borderColor
               }
             }
           },
@@ -163,16 +132,31 @@ function App() {
             ...chartData.yAxis,
             axisLine: {
               lineStyle: {
-                color: '#fff'
+                color: theme.textColor
+              }
+            },
+            axisLabel: {
+              color: theme.textColor
+            },
+            splitLine: {
+              lineStyle: {
+                color: theme.borderColor
               }
             }
           },
-          series: chartData.series.map(s => ({
+          series: chartData.series.map((s, index) => ({
             ...s,
-            itemStyle: { 
-              color: currentPalette.primary,
-              borderRadius: [4, 4, 0, 0]
-            }
+            itemStyle: {
+              color: COLOR_PALETTES[colorPalette][index % COLOR_PALETTES[colorPalette].length]
+            },
+            ...(s.type === 'line' && {
+              lineStyle: {
+                width: 3,
+                color: COLOR_PALETTES[colorPalette][index % COLOR_PALETTES[colorPalette].length]
+              },
+              symbol: 'circle',
+              symbolSize: 8
+            })
           }))
         };
 
@@ -182,14 +166,20 @@ function App() {
           series: [{
             ...chartData.series[0],
             radius: ['40%', '70%'],
-            label: { 
-              color: '#fff',
+            label: {
+              color: theme.textColor,
               fontSize: 14
+            },
+            itemStyle: {
+              borderRadius: 4,
+              borderColor: theme.backgroundColor,
+              borderWidth: 2
             },
             emphasis: {
               label: {
                 show: true,
-                fontSize: 16
+                fontSize: 16,
+                fontWeight: 'bold'
               },
               itemStyle: {
                 shadowBlur: 10,
@@ -203,7 +193,7 @@ function App() {
       default:
         return chartData;
     }
-  }, [chartData, selectedPalette]);
+  }, [chartData, colorPalette, theme]);
 
   return (
     <div className="app-container">
@@ -217,6 +207,7 @@ function App() {
           <a href="#tutorial">Tutorial</a>
           <a href="#pricing">Pricing</a>
           <a href="#contact">Contact</a>
+          <ThemeToggleButton />
           <button className="sign-in">Sign in</button>
           <button className="sign-up">Sign up</button>
         </nav>
@@ -253,30 +244,29 @@ function App() {
               <div className="control-group">
                 <label>Chart Type:</label>
                 <div className="chart-types">
-                  {chartTypes.map(({ id, label }) => (
-                    <button
-                      key={id}
-                      onClick={() => setSelectedChartType(id)}
-                      className={`chart-type-btn ${selectedChartType === id ? 'active' : ''}`}
-                    >
-                      {label}
-                    </button>
-                  ))}
+                  <select 
+                    value={chartType} 
+                    onChange={(e) => setChartType(e.target.value)}
+                  >
+                    <option value="bar">Bar Chart</option>
+                    <option value="line">Line Chart</option>
+                    <option value="pie">Pie Chart</option>
+                    <option value="scatter">Scatter Plot</option>
+                  </select>
                 </div>
               </div>
 
               <div className="control-group">
                 <label>Color Theme:</label>
                 <div className="palette-options">
-                  {Object.keys(colorPalettes).map((paletteName) => (
-                    <button
-                      key={paletteName}
-                      onClick={() => setSelectedPalette(paletteName)}
-                      className={`palette-btn ${selectedPalette === paletteName ? 'active' : ''}`}
-                      style={{ backgroundColor: colorPalettes[paletteName].primary }}
-                      title={paletteName.charAt(0).toUpperCase() + paletteName.slice(1)}
-                    />
-                  ))}
+                  <select 
+                    value={colorPalette} 
+                    onChange={(e) => setColorPalette(e.target.value)}
+                  >
+                    {Object.keys(COLOR_PALETTES).map(palette => (
+                      <option key={palette} value={palette}>{palette}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
@@ -288,14 +278,14 @@ function App() {
               <p>{error}</p>
             </div>
           )}
-          
+
           {loading && (
             <div className="loading">
               <div className="loading-spinner"></div>
               <p>Processing your request...</p>
             </div>
           )}
-          
+
           {chartData && (
             <div className="results-container">
               <div className="chart-container">
@@ -325,6 +315,6 @@ function App() {
       </main>
     </div>
   );
-};
+}
 
 export default App;
