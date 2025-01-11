@@ -1,8 +1,13 @@
-const API_URL = process.env.REACT_APP_API_URL;
+import config from '../config';
+
+const API_URL = config.apiUrl;
 
 export const fetchQueryResults = async (query, chartType) => {
   try {
-    const response = await fetch(`${API_URL}/query`, {
+    const fullUrl = `${API_URL}/query`;
+    console.log('Calling API at:', fullUrl);
+
+    const response = await fetch(fullUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -11,6 +16,8 @@ export const fetchQueryResults = async (query, chartType) => {
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
