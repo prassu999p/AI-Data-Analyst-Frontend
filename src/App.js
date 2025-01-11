@@ -1,11 +1,8 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { sendQuery } from './services/api';
+import React, { useCallback, useEffect, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import './App.css';
 import { useTheme } from './context/ThemeContext';
-
-// Add API base URL configuration
-const API_BASE_URL = 'http://localhost:8000';
+import QueryForm from './components/QueryForm';
 
 function ThemeToggleButton() {
   const { theme, toggleTheme } = useTheme();
@@ -33,9 +30,6 @@ const COLOR_PALETTES = {
 
 function App() {
   const { theme } = useTheme();
-  const [query, setQuery] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [chartData, setChartData] = useState(null);
   const [analysis, setAnalysis] = useState(null);
   const [chartType, setChartType] = useState('bar');
@@ -46,56 +40,13 @@ function App() {
     document.body.style.color = theme.textColor;
   }, [theme]);
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setLoading(true);
-    setError(null);
-    
-    try {
-      console.log('Sending query:', { text: query, chart_type: chartType });
-      
-      const response = await sendQuery({ 
-        text: query, 
-        chart_type: chartType === 'auto' ? null : chartType 
-      });
-      
-      console.log('Raw API Response:', response);
-      
-      if (!response) {
-        throw new Error('No response received');
-      }
-
-      if (!response.data) {
-        console.log('Invalid response structure:', response);
-        throw new Error('Response missing data property');
-      }
-
-      const { chart_data, answer, suggested_chart } = response.data;
-      
-      if (!chart_data) {
-        console.log('Missing chart data:', response.data);
-        throw new Error('Response missing chart_data');
-      }
-
-      setChartData(chart_data);
+  const handleQueryResults = (results) => {
+    if (results?.chart_data) {
+      setChartData(results.chart_data);
       setAnalysis({
-        answer: answer || 'No analysis available',
-        suggestedChart: suggested_chart
+        answer: results.answer || 'No analysis available',
+        suggestedChart: results.suggested_chart
       });
-      setError(null);
-    } catch (err) {
-      console.error('Full error details:', {
-        error: err,
-        message: err.message,
-        response: err.response,
-        responseData: err.response?.data
-      });
-      
-      setError(`Error processing request: ${err.message}`);
-      setChartData(null);
-      setAnalysis(null);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -248,105 +199,55 @@ function App() {
         </nav>
       </div>
 
+      <div className="hero">
+        <h1>Visualize Your Data</h1>
+        <p>Ask questions about your data in plain English</p>
+      </div>
+
       <main className="main-content">
-        <div className="hero">
-          <h1>Transform Data into Insights</h1>
-          <p>Your AI-powered data visualization companion</p>
-        </div>
-
         <div className="query-container">
-          <form onSubmit={handleSubmit} className="query-box">
-            <textarea
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ask DataViz AI to visualize your data trends..."
-              className="query-input"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit(e);
-                }
-              }}
-            />
-            <div className="query-buttons">
-              <button type="button" className="database-btn">+ Database</button>
-              <button type="submit" className="submit-btn">→</button>
+          <QueryForm onQueryResults={handleQueryResults} chartType={chartType} />
+          
+          <div className="visualization-controls">
+            <div className="control-group">
+              <label>Chart Type</label>
+              <select value={chartType} onChange={(e) => setChartType(e.target.value)}>
+                <option value="bar">Bar Chart</option>
+                <option value="line">Line Chart</option>
+                <option value="pie">Pie Chart</option>
+                <option value="auto">Auto</option>
+              </select>
             </div>
-          </form>
-
-          <div className="controls-container">
-            <div className="visualization-controls">
-              <div className="control-group">
-                <label>Chart Type:</label>
-                <div className="chart-types">
-                  <select 
-                    value={chartType} 
-                    onChange={(e) => setChartType(e.target.value)}
-                  >
-                    <option value="bar">Bar Chart</option>
-                    <option value="line">Line Chart</option>
-                    <option value="pie">Pie Chart</option>
-                    <option value="scatter">Scatter Plot</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="control-group">
-                <label>Color Theme:</label>
-                <div className="palette-options">
-                  <select 
-                    value={colorPalette} 
-                    onChange={(e) => setColorPalette(e.target.value)}
-                  >
-                    {Object.keys(COLOR_PALETTES).map(palette => (
-                      <option key={palette} value={palette}>{palette}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+            <div className="control-group">
+              <label>Color Palette</label>
+              <select value={colorPalette} onChange={(e) => setColorPalette(e.target.value)}>
+                {Object.keys(COLOR_PALETTES).map(palette => (
+                  <option key={palette} value={palette}>{palette}</option>
+                ))}
+              </select>
             </div>
           </div>
-
-          {error && (
-            <div className="error-message">
-              <h3>Error</h3>
-              <p>{error}</p>
-            </div>
-          )}
-
-          {loading && (
-            <div className="loading">
-              <div className="loading-spinner"></div>
-              <p>Processing your request...</p>
-            </div>
-          )}
-
-          {chartData && (
-            <div className="results-container">
-              <div className="chart-container">
-                <ReactECharts
-                  option={getChartOptions()}
-                  style={{ height: '500px', width: '100%' }}
-                  theme={theme.backgroundColor === '#ffffff' ? 'light' : 'dark'}
-                />
-              </div>
-
-              {analysis && (
-                <div className="analysis-container">
-                  <h3>Analysis</h3>
-                  <div className="analysis-content">
-                    <p>{analysis.answer}</p>
-                    {analysis.suggestedChart && (
-                      <div className="suggested-chart">
-                        Suggested Chart: {analysis.suggestedChart}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
+        
+        {chartData && (
+          <div className="visualization-container">
+            <div className="chart-container">
+              <ReactECharts option={getChartOptions()} style={{ height: '400px' }} />
+            </div>
+
+            {analysis && (
+              <div className="analysis-container">
+                <h3>Analysis</h3>
+                <div className="analysis-content">{analysis.answer}</div>
+                {analysis.suggestedChart && (
+                  <div className="suggested-chart">
+                    Suggested visualization: {analysis.suggestedChart}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </main>
     </div>
   );
