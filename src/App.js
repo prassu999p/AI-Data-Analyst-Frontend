@@ -49,24 +49,54 @@ function App() {
     setError(null);
     
     try {
+      // Log the query being sent
+      console.log('Sending query:', { text: query, chart_type: chartType });
+      
       const response = await sendQuery({ 
         text: query, 
         chart_type: chartType === 'auto' ? null : chartType 
       });
       
-      if (!response || !response.llm_analysis || !response.llm_analysis.final_answer) {
-        throw new Error('Invalid response format from server');
+      // Log the full response
+      console.log('Raw API Response:', response);
+      
+      // Check response structure step by step
+      if (!response) {
+        throw new Error('No response received');
       }
 
-      setChartData(response.data.data.chart_data);
+      if (!response.data) {
+        console.log('Invalid response structure:', response);
+        throw new Error('Response missing data property');
+      }
+
+      if (!response.data.data) {
+        console.log('Invalid data structure:', response.data);
+        throw new Error('Response missing data.data property');
+      }
+
+      const { chart_data, answer, suggested_chart } = response.data.data;
+      
+      if (!chart_data) {
+        console.log('Missing chart data:', response.data.data);
+        throw new Error('Response missing chart_data');
+      }
+
+      setChartData(chart_data);
       setAnalysis({
-        answer: response.data.data.answer,
-        suggestedChart: response.data.data.suggested_chart
+        answer: answer || 'No analysis available',
+        suggestedChart: suggested_chart
       });
       setError(null);
     } catch (err) {
-      console.error('Error:', err);
-      setError('An error occurred while processing your request. Please try again.');
+      console.error('Full error details:', {
+        error: err,
+        message: err.message,
+        response: err.response,
+        responseData: err.response?.data
+      });
+      
+      setError(`Error processing request: ${err.message}`);
       setChartData(null);
       setAnalysis(null);
     } finally {
