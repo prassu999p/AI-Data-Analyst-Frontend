@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import axios from 'axios';
+import { sendQuery } from './services/api';
 import ReactECharts from 'echarts-for-react';
 import './App.css';
 import { useTheme } from './context/ThemeContext';
@@ -46,39 +46,32 @@ function App() {
     document.body.style.color = theme.textColor;
   }, [theme]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!query.trim()) return;
-
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setLoading(true);
-    setError('');
-    setChartData(null);
-    setAnalysis(null);
-
+    setError(null);
+    
     try {
-      const response = await axios.post(`${API_BASE_URL}/query`, {
-        text: query,
-        chart_type: chartType === 'auto' ? null : chartType
+      const response = await sendQuery({ 
+        text: query, 
+        chart_type: chartType === 'auto' ? null : chartType 
       });
-
-      if (response.data.status === "success" && response.data.data) {
-        // Validate chart data structure
-        const receivedChartData = response.data.data.chart_data;
-        if (receivedChartData && receivedChartData.series) {
-          setChartData(receivedChartData);
-          setAnalysis({
-            answer: response.data.data.answer,
-            suggestedChart: response.data.data.suggested_chart
-          });
-        } else {
-          setError("Invalid chart data format received from server");
-        }
-      } else {
-        setError(response.data.message || "Failed to process query");
+      
+      if (!response || !response.llm_analysis || !response.llm_analysis.final_answer) {
+        throw new Error('Invalid response format from server');
       }
+
+      setChartData(response.data.data.chart_data);
+      setAnalysis({
+        answer: response.data.data.answer,
+        suggestedChart: response.data.data.suggested_chart
+      });
+      setError(null);
     } catch (err) {
       console.error('Error:', err);
-      setError(err.response?.data?.detail || "An error occurred while processing your request");
+      setError('An error occurred while processing your request. Please try again.');
+      setChartData(null);
+      setAnalysis(null);
     } finally {
       setLoading(false);
     }
