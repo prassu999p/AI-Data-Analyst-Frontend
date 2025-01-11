@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import ReactECharts from 'echarts-for-react';
-import * as echarts from 'echarts';
 import './App.css';
 import { useTheme } from './context/ThemeContext';
 
@@ -30,7 +29,7 @@ const COLOR_PALETTES = {
 };
 
 function App() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
