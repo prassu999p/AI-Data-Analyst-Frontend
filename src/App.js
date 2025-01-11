@@ -5,6 +5,9 @@ import * as echarts from 'echarts';
 import './App.css';
 import { useTheme } from './context/ThemeContext';
 
+// Add API base URL configuration
+const API_BASE_URL = 'http://localhost:8000';
+
 function ThemeToggleButton() {
   const { theme, toggleTheme } = useTheme();
 
@@ -54,18 +57,23 @@ function App() {
     setAnalysis(null);
 
     try {
-      const apiUrl = "http://localhost:8000"; // Default API URL
-      const response = await axios.post(`${apiUrl}/query`, {
+      const response = await axios.post(`${API_BASE_URL}/query`, {
         text: query,
         chart_type: chartType === 'auto' ? null : chartType
       });
 
-      if (response.data.status === "success") {
-        setChartData(response.data.data.chart_data);
-        setAnalysis({
-          answer: response.data.data.answer,
-          suggestedChart: response.data.data.suggested_chart
-        });
+      if (response.data.status === "success" && response.data.data) {
+        // Validate chart data structure
+        const receivedChartData = response.data.data.chart_data;
+        if (receivedChartData && receivedChartData.series) {
+          setChartData(receivedChartData);
+          setAnalysis({
+            answer: response.data.data.answer,
+            suggestedChart: response.data.data.suggested_chart
+          });
+        } else {
+          setError("Invalid chart data format received from server");
+        }
       } else {
         setError(response.data.message || "Failed to process query");
       }
@@ -78,7 +86,12 @@ function App() {
   };
 
   const getChartOptions = useCallback(() => {
-    if (!chartData) return {};
+    if (!chartData || !chartData.series || !chartData.series.length) {
+      return {
+        backgroundColor: 'transparent',
+        textStyle: { color: theme.textColor }
+      };
+    }
 
     const baseOptions = {
       backgroundColor: 'transparent',
@@ -106,14 +119,17 @@ function App() {
       }
     };
 
+    const chartType = chartData.series[0]?.type || 'bar';
+
     // Handle different chart types
-    switch (chartData.series[0].type) {
+    switch (chartType) {
       case "line":
       case "bar":
         return {
           ...baseOptions,
           xAxis: {
-            ...chartData.xAxis,
+            ...(chartData.xAxis || {}),
+            type: 'category',
             axisLine: {
               lineStyle: {
                 color: theme.textColor
@@ -129,7 +145,8 @@ function App() {
             }
           },
           yAxis: {
-            ...chartData.yAxis,
+            ...(chartData.yAxis || {}),
+            type: 'value',
             axisLine: {
               lineStyle: {
                 color: theme.textColor
@@ -146,6 +163,7 @@ function App() {
           },
           series: chartData.series.map((s, index) => ({
             ...s,
+            type: s.type || chartType,
             itemStyle: {
               color: COLOR_PALETTES[colorPalette][index % COLOR_PALETTES[colorPalette].length]
             },
@@ -164,7 +182,8 @@ function App() {
         return {
           ...baseOptions,
           series: [{
-            ...chartData.series[0],
+            ...(chartData.series[0] || {}),
+            type: 'pie',
             radius: ['40%', '70%'],
             label: {
               color: theme.textColor,
@@ -191,7 +210,10 @@ function App() {
         };
 
       default:
-        return chartData;
+        return {
+          ...baseOptions,
+          ...chartData
+        };
     }
   }, [chartData, colorPalette, theme]);
 
@@ -199,7 +221,6 @@ function App() {
     <div className="app-container">
       <div className="header">
         <div className="logo-container">
-          <img src="/logo.png" alt="DataViz AI Logo" className="logo" />
           <span className="logo-text">DataViz AI</span>
         </div>
         <nav>
@@ -292,7 +313,7 @@ function App() {
                 <ReactECharts
                   option={getChartOptions()}
                   style={{ height: '500px', width: '100%' }}
-                  theme="dark"
+                  theme={theme.backgroundColor === '#ffffff' ? 'light' : 'dark'}
                 />
               </div>
 
