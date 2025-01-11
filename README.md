@@ -68,3 +68,19 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+# Environment Setup
+
+1. Copy `.env.example` to create `.env.development` and `.env.production`:
+   ```bash
+   cp .env.example .env.development
+   cp .env.example .env.production
+   ```
+
+2. Update the API URLs in these files:
+   - `.env.development`: Use `http://localhost:8000`
+   - `.env.production`: Use `https://ai-data-analyst-u6m6.onrender.com`
+
+3. The application will automatically use the correct environment file based on the build mode:
+   - `npm start`: Uses `.env.development`
+   - `npm run build`: Uses `.env.production`
