@@ -44,9 +44,23 @@ function App() {
     if (results?.chart_data) {
       setChartData(results.chart_data);
       setAnalysis({
-        answer: results.answer || 'No analysis available',
-        suggestedChart: results.suggested_chart
+        answer: answer || 'No analysis available',
+        suggestedChart: suggested_chart
       });
+      setError(null);
+    } catch (err) {
+      console.error('Full error details:', {
+        error: err,
+        message: err.message,
+        response: err.response,
+        responseData: err.response?.data
+      });
+      
+      setError(`Error processing request: ${err.message}`);
+      setChartData(null);
+      setAnalysis(null);
+    } finally {
+      setLoading(false);
     }
   };
 
