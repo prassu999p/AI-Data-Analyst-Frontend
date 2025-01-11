@@ -52,7 +52,6 @@ function App() {
     setError(null);
     
     try {
-      // Log the query being sent
       console.log('Sending query:', { text: query, chart_type: chartType });
       
       const response = await sendQuery({ 
@@ -60,10 +59,8 @@ function App() {
         chart_type: chartType === 'auto' ? null : chartType 
       });
       
-      // Log the full response
       console.log('Raw API Response:', response);
       
-      // Check response structure step by step
       if (!response) {
         throw new Error('No response received');
       }
@@ -73,15 +70,10 @@ function App() {
         throw new Error('Response missing data property');
       }
 
-      if (!response.data.data) {
-        console.log('Invalid data structure:', response.data);
-        throw new Error('Response missing data.data property');
-      }
-
-      const { chart_data, answer, suggested_chart } = response.data.data;
+      const { chart_data, answer, suggested_chart } = response.data;
       
       if (!chart_data) {
-        console.log('Missing chart data:', response.data.data);
+        console.log('Missing chart data:', response.data);
         throw new Error('Response missing chart_data');
       }
 
