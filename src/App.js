@@ -43,24 +43,16 @@ function App() {
   const handleQueryResults = (results) => {
     if (results?.chart_data) {
       setChartData(results.chart_data);
-      setAnalysis({
-        answer: answer || 'No analysis available',
-        suggestedChart: suggested_chart
-      });
-      setError(null);
-    } catch (err) {
-      console.error('Full error details:', {
-        error: err,
-        message: err.message,
-        response: err.response,
-        responseData: err.response?.data
-      });
-      
-      setError(`Error processing request: ${err.message}`);
+      if (results.answer && results.suggested_chart) {
+        setAnalysis({
+          answer: results.answer,
+          suggestedChart: results.suggested_chart
+        });
+      }
+    } else {
+      console.error('Invalid results format:', results);
       setChartData(null);
       setAnalysis(null);
-    } finally {
-      setLoading(false);
     }
   };
 
