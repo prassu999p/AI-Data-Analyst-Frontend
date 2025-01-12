@@ -16,7 +16,7 @@ const QueryForm = ({ onQueryResults, chartType }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!query.trim()) return;
-
+    
     setIsLoading(true);
     setError(null);
 
