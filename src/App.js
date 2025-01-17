@@ -32,17 +32,26 @@ function App() {
   const { theme } = useTheme();
   const [chartData, setChartData] = useState(null);
   const [analysis, setAnalysis] = useState(null);
-  const [chartType, setChartType] = useState('bar');
+  const [chartType, setChartType] = useState('auto');
   const [colorPalette, setColorPalette] = useState('Vibrant');
+  const [queryCache, setQueryCache] = useState({
+    lastQuery: null,
+    rawData: null
+  });
 
   useEffect(() => {
     document.body.style.backgroundColor = theme.backgroundColor;
     document.body.style.color = theme.textColor;
   }, [theme]);
 
-  const handleQueryResults = (results) => {
+  const handleQueryResults = (results, queryText) => {
     if (results?.chart_data) {
       setChartData(results.chart_data);
+      setQueryCache({
+        lastQuery: queryText,
+        rawData: results
+      });
+      setChartType('auto');
       if (results.answer && results.suggested_chart) {
         setAnalysis({
           answer: results.answer,
@@ -53,6 +62,24 @@ function App() {
       console.error('Invalid results format:', results);
       setChartData(null);
       setAnalysis(null);
+      setQueryCache({
+        lastQuery: null,
+        rawData: null
+      });
+    }
+  };
+
+  const handleChartTypeChange = (newChartType) => {
+    setChartType(newChartType);
+    if (queryCache.rawData) {
+      const updatedChartData = {
+        ...queryCache.rawData.chart_data,
+        series: queryCache.rawData.chart_data.series.map(series => ({
+          ...series,
+          type: newChartType === 'auto' ? series.type : newChartType
+        }))
+      };
+      setChartData(updatedChartData);
     }
   };
 
@@ -212,12 +239,19 @@ function App() {
 
       <main className="main-content">
         <div className="query-container">
-          <QueryForm onQueryResults={handleQueryResults} chartType={chartType} />
+          <QueryForm 
+            onQueryResults={handleQueryResults} 
+            chartType={chartType} 
+            currentQuery={queryCache.lastQuery}
+          />
           
           <div className="visualization-controls">
             <div className="control-group">
               <label>Chart Type</label>
-              <select value={chartType} onChange={(e) => setChartType(e.target.value)}>
+              <select 
+                value={chartType} 
+                onChange={(e) => handleChartTypeChange(e.target.value)}
+              >
                 <option value="bar">Bar Chart</option>
                 <option value="line">Line Chart</option>
                 <option value="pie">Pie Chart</option>

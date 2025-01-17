@@ -1,10 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { sendQuery } from '../services/api';
 
-const QueryForm = ({ onQueryResults, chartType }) => {
+const QueryForm = ({ onQueryResults, chartType, currentQuery }) => {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Update query input when currentQuery changes
+  useEffect(() => {
+    if (currentQuery) {
+      setQuery(currentQuery);
+    }
+  }, [currentQuery]);
 
   const sampleQueries = [
     "What is the total sales amount for each month in 2024?",
@@ -17,21 +24,24 @@ const QueryForm = ({ onQueryResults, chartType }) => {
     e.preventDefault();
     if (!query.trim()) return;
     
-    setIsLoading(true);
-    setError(null);
+    // Only make API call if the query has changed from the cached query
+    if (query !== currentQuery) {
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      const response = await sendQuery({
-        text: query,
-        chart_type: chartType === 'auto' ? null : chartType
-      });
-      
-      onQueryResults(response.data);
-    } catch (error) {
-      setError('Failed to fetch data from API');
-      console.error('Error:', error);
-    } finally {
-      setIsLoading(false);
+      try {
+        const response = await sendQuery({
+          text: query,
+          chart_type: chartType === 'auto' ? null : chartType
+        });
+        
+        onQueryResults(response.data, query);
+      } catch (error) {
+        setError('Failed to fetch data from API');
+        console.error('Error:', error);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -53,7 +63,7 @@ const QueryForm = ({ onQueryResults, chartType }) => {
           <button 
             type="submit" 
             className="submit-button"
-            disabled={isLoading || !query.trim()}
+            disabled={isLoading || !query.trim() || (query === currentQuery)}
           >
             {isLoading ? 'Loading...' : 'Ask'}
           </button>
