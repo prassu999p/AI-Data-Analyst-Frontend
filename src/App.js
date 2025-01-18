@@ -1,296 +1,192 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import ReactECharts from 'echarts-for-react';
+import React, { useState } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import DatabaseConnectionPage from './components/DatabaseConnectionPage';
+import DatabaseSelector from './components/DatabaseSelector';
+import ChartDisplay from './components/ChartDisplay';
+import { sendQuery } from './services/api';
 import './App.css';
-import { useTheme } from './context/ThemeContext';
-import QueryForm from './components/QueryForm';
-
-function ThemeToggleButton() {
-  const { theme, toggleTheme } = useTheme();
-
-  return (
-    <button
-      className="theme-toggle"
-      onClick={toggleTheme}
-      style={{
-        backgroundColor: theme.buttonBackground,
-        color: theme.buttonText
-      }}
-    >
-      {theme.backgroundColor === '#ffffff' ? '🌙' : '☀️'}
-    </button>
-  );
-}
-
-const COLOR_PALETTES = {
-  'Vibrant': ['#ff7875', '#ff9c6e', '#ffc069', '#ffd666', '#fff566', '#bae637', '#5cdbd3', '#69c0ff', '#85a5ff'],
-  'Cool': ['#8ecae6', '#219ebc', '#023047', '#ffb703', '#fb8500', '#126782', '#4895ef', '#457b9d', '#1a759f'],
-  'Warm': ['#cb997e', '#ddbea9', '#ffe8d6', '#b7b7a4', '#a5a58d', '#6b705c', '#e07a5f', '#f2cc8f', '#81b29a'],
-  'Pastel': ['#ffadad', '#ffd6a5', '#fdffb6', '#caffbf', '#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff', '#fffffc']
-};
 
 function App() {
-  const { theme } = useTheme();
-  const [chartData, setChartData] = useState(null);
-  const [analysis, setAnalysis] = useState(null);
-  const [chartType, setChartType] = useState('auto');
-  const [colorPalette, setColorPalette] = useState('Vibrant');
-  const [queryCache, setQueryCache] = useState({
-    lastQuery: null,
-    rawData: null
-  });
+    const [currentPage, setCurrentPage] = useState('home');
+    const [selectedConnection, setSelectedConnection] = useState(null);
+    const [query, setQuery] = useState('');
+    const [chartType, setChartType] = useState('auto');
+    const [colorPalette, setColorPalette] = useState('warm');
+    const [isLoading, setIsLoading] = useState(false);
+    const [queryResult, setQueryResult] = useState(null);
 
-  useEffect(() => {
-    document.body.style.backgroundColor = theme.backgroundColor;
-    document.body.style.color = theme.textColor;
-  }, [theme]);
-
-  const handleQueryResults = (results, queryText) => {
-    if (results?.chart_data) {
-      setChartData(results.chart_data);
-      setQueryCache({
-        lastQuery: queryText,
-        rawData: results
-      });
-      setChartType('auto');
-      if (results.answer && results.suggested_chart) {
-        setAnalysis({
-          answer: results.answer,
-          suggestedChart: results.suggested_chart
-        });
-      }
-    } else {
-      console.error('Invalid results format:', results);
-      setChartData(null);
-      setAnalysis(null);
-      setQueryCache({
-        lastQuery: null,
-        rawData: null
-      });
-    }
-  };
-
-  const handleChartTypeChange = (newChartType) => {
-    setChartType(newChartType);
-    if (queryCache.rawData) {
-      const updatedChartData = {
-        ...queryCache.rawData.chart_data,
-        series: queryCache.rawData.chart_data.series.map(series => ({
-          ...series,
-          type: newChartType === 'auto' ? series.type : newChartType
-        }))
-      };
-      setChartData(updatedChartData);
-    }
-  };
-
-  const getChartOptions = useCallback(() => {
-    if (!chartData || !chartData.series || !chartData.series.length) {
-      return {
-        backgroundColor: 'transparent',
-        textStyle: { color: theme.textColor }
-      };
-    }
-
-    const baseOptions = {
-      backgroundColor: 'transparent',
-      textStyle: {
-        color: theme.textColor
-      },
-      tooltip: {
-        trigger: 'axis',
-        backgroundColor: theme.buttonBackground,
-        borderColor: theme.borderColor,
-        textStyle: {
-          color: theme.textColor
-        }
-      },
-      legend: {
-        textStyle: {
-          color: theme.textColor
-        }
-      },
-      grid: {
-        left: '3%',
-        right: '4%',
-        bottom: '3%',
-        containLabel: true
-      }
+    // Color palette configurations
+    const colorPalettes = {
+        warm: ['#ff4d4f', '#ff7875', '#ff9c9c', '#ffbfbf', '#ffe2e2'],
+        cool: ['#40a9ff', '#69c0ff', '#91d5ff', '#bae7ff', '#e6f7ff'],
+        vibrant: ['#f44336', '#2196f3', '#4caf50', '#ffeb3b', '#9c27b0'],
+        pastel: ['#ffb6b9', '#fae3d9', '#bbded6', '#8ac6d1', '#b8e6e1']
     };
 
-    const chartType = chartData.series[0]?.type || 'bar';
+    const handleQuerySubmit = async () => {
+        if (!selectedConnection) {
+            toast.warning('Please select a database connection first');
+            return;
+        }
+        if (!query.trim()) {
+            toast.warning('Please enter a query');
+            return;
+        }
 
-    // Handle different chart types
-    switch (chartType) {
-      case "line":
-      case "bar":
-        return {
-          ...baseOptions,
-          xAxis: {
-            ...(chartData.xAxis || {}),
-            type: 'category',
-            axisLine: {
-              lineStyle: {
-                color: theme.textColor
-              }
-            },
-            axisLabel: {
-              color: theme.textColor
-            },
-            splitLine: {
-              lineStyle: {
-                color: theme.borderColor
-              }
+        setIsLoading(true);
+        try {
+            const response = await sendQuery({
+                text: query,
+                connection_id: selectedConnection.id,
+                chart_type: chartType === 'auto' ? null : chartType
+            });
+
+            if (response.error) {
+                throw new Error(response.error);
             }
-          },
-          yAxis: {
-            ...(chartData.yAxis || {}),
-            type: 'value',
-            axisLine: {
-              lineStyle: {
-                color: theme.textColor
-              }
-            },
-            axisLabel: {
-              color: theme.textColor
-            },
-            splitLine: {
-              lineStyle: {
-                color: theme.borderColor
-              }
+
+            console.log('Raw response:', response);
+            
+            // Extract the data from the response
+            const responseData = response.data || response;
+            console.log('Response data:', responseData);
+            
+            // If chart type is auto, use the suggested chart type
+            if (chartType === 'auto' && responseData.suggested_chart) {
+                setChartType(responseData.suggested_chart);
             }
-          },
-          series: chartData.series.map((s, index) => ({
-            ...s,
-            type: s.type || chartType,
-            itemStyle: {
-              color: COLOR_PALETTES[colorPalette][index % COLOR_PALETTES[colorPalette].length]
-            },
-            ...(s.type === 'line' && {
-              lineStyle: {
-                width: 3,
-                color: COLOR_PALETTES[colorPalette][index % COLOR_PALETTES[colorPalette].length]
-              },
-              symbol: 'circle',
-              symbolSize: 8
-            })
-          }))
-        };
+            
+            setQueryResult(responseData);
+            toast.success('Query executed successfully');
+        } catch (error) {
+            console.error('Query error:', error);
+            toast.error(error.message || 'Failed to execute query');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-      case "pie":
-        return {
-          ...baseOptions,
-          series: [{
-            ...(chartData.series[0] || {}),
-            type: 'pie',
-            radius: ['40%', '70%'],
-            label: {
-              color: theme.textColor,
-              fontSize: 14
-            },
-            itemStyle: {
-              borderRadius: 4,
-              borderColor: theme.backgroundColor,
-              borderWidth: 2
-            },
-            emphasis: {
-              label: {
-                show: true,
-                fontSize: 16,
-                fontWeight: 'bold'
-              },
-              itemStyle: {
-                shadowBlur: 10,
-                shadowOffsetX: 0,
-                shadowColor: 'rgba(0, 0, 0, 0.5)'
-              }
-            }
-          }]
-        };
+    const renderQueryResults = () => {
+        if (!queryResult) return null;
 
-      default:
-        return {
-          ...baseOptions,
-          ...chartData
-        };
-    }
-  }, [chartData, colorPalette, theme]);
+        console.log('Rendering results with:', queryResult);
 
-  return (
-    <div className="app-container">
-      <div className="header">
-        <div className="logo-container">
-          <span className="logo-text">DataViz AI</span>
-        </div>
-        <nav>
-          <a href="#docs">Docs</a>
-          <a href="#tutorial">Tutorial</a>
-          <a href="#pricing">Pricing</a>
-          <a href="#contact">Contact</a>
-          <ThemeToggleButton />
-          <button className="sign-in">Sign in</button>
-          <button className="sign-up">Sign up</button>
-        </nav>
-      </div>
-
-      <div className="hero">
-        <h1>Visualize Your Data</h1>
-        <p>Ask questions about your data in plain English</p>
-      </div>
-
-      <main className="main-content">
-        <div className="query-container">
-          <QueryForm 
-            onQueryResults={handleQueryResults} 
-            chartType={chartType} 
-            currentQuery={queryCache.lastQuery}
-          />
-          
-          <div className="visualization-controls">
-            <div className="control-group">
-              <label>Chart Type</label>
-              <select 
-                value={chartType} 
-                onChange={(e) => handleChartTypeChange(e.target.value)}
-              >
-                <option value="bar">Bar Chart</option>
-                <option value="line">Line Chart</option>
-                <option value="pie">Pie Chart</option>
-                <option value="auto">Auto</option>
-              </select>
-            </div>
-            <div className="control-group">
-              <label>Color Palette</label>
-              <select value={colorPalette} onChange={(e) => setColorPalette(e.target.value)}>
-                {Object.keys(COLOR_PALETTES).map(palette => (
-                  <option key={palette} value={palette}>{palette}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-        
-        {chartData && (
-          <div className="visualization-container">
-            <div className="chart-container">
-              <ReactECharts option={getChartOptions()} style={{ height: '400px' }} />
-            </div>
-
-            {analysis && (
-              <div className="analysis-container">
-                <h3>Analysis</h3>
-                <div className="analysis-content">{analysis.answer}</div>
-                {analysis.suggestedChart && (
-                  <div className="suggested-chart">
-                    Suggested visualization: {analysis.suggestedChart}
-                  </div>
+        return (
+            <div className="results-container">
+                <h3>Results</h3>
+                {queryResult.chart_data && (
+                    <ChartDisplay 
+                        data={queryResult.chart_data} 
+                        chartType={chartType === 'auto' ? queryResult.suggested_chart : chartType}
+                        colorPalette={colorPalettes[colorPalette]}
+                    />
                 )}
-              </div>
-            )}
-          </div>
-        )}
-      </main>
-    </div>
-  );
+            </div>
+        );
+    };
+
+    const renderPage = () => {
+        switch (currentPage) {
+            case 'connections':
+                return <DatabaseConnectionPage />;
+            case 'home':
+                return (
+                    <div className="main-content">
+                        <div className="hero">
+                            <h1>Visualize Your Data</h1>
+                            <p>Ask questions about your data in plain English</p>
+                        </div>
+                        <div className="query-container">
+                            <DatabaseSelector 
+                                onConnectionSelect={setSelectedConnection}
+                                selectedConnectionId={selectedConnection?.id}
+                            />
+                            <div className="input-group">
+                                <input
+                                    type="text"
+                                    className="query-input"
+                                    placeholder="Ask a question about your data..."
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    disabled={isLoading}
+                                />
+                                <button 
+                                    className="submit-button"
+                                    onClick={handleQuerySubmit}
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? 'Loading...' : 'Ask'}
+                                </button>
+                            </div>
+                            <div className="visualization-controls">
+                                <div className="control-group">
+                                    <label>Chart Type</label>
+                                    <select 
+                                        value={chartType} 
+                                        onChange={(e) => setChartType(e.target.value)}
+                                        disabled={isLoading}
+                                    >
+                                        <option value="line">Line Chart</option>
+                                        <option value="bar">Bar Chart</option>
+                                        <option value="pie">Pie Chart</option>
+                                        <option value="auto">Auto</option>
+                                    </select>
+                                </div>
+                                <div className="control-group">
+                                    <label>Color Palette</label>
+                                    <select 
+                                        value={colorPalette}
+                                        onChange={(e) => setColorPalette(e.target.value)}
+                                        disabled={isLoading}
+                                    >
+                                        <option value="warm">Warm</option>
+                                        <option value="cool">Cool</option>
+                                        <option value="vibrant">Vibrant</option>
+                                        <option value="pastel">Pastel</option>
+                                    </select>
+                                </div>
+                            </div>
+                            {renderQueryResults()}
+                        </div>
+                    </div>
+                );
+            default:
+                return null;
+        }
+    };
+
+    return (
+        <div className="app-container">
+            <header className="header">
+                <div className="logo">
+                    <button onClick={() => setCurrentPage('home')} className="logo-text">
+                        DataViz AI
+                    </button>
+                </div>
+                <nav className="nav-links">
+                    <button 
+                        onClick={() => setCurrentPage('home')}
+                        className={`nav-button ${currentPage === 'home' ? 'active' : ''}`}
+                    >
+                        Home
+                    </button>
+                    <button 
+                        onClick={() => setCurrentPage('connections')}
+                        className={`nav-button ${currentPage === 'connections' ? 'active' : ''}`}
+                    >
+                        Database Connections
+                    </button>
+                </nav>
+            </header>
+
+            <main className="main">
+                {renderPage()}
+            </main>
+
+            <ToastContainer position="bottom-right" />
+        </div>
+    );
 }
 
 export default App;
