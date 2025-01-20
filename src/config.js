@@ -1,15 +1,4 @@
-// Configuration for different environments
-const config = {
-  development: {
-    apiUrl: 'http://localhost:8000'
-  },
-  production: {
-    apiUrl: 'https://ai-data-analyst-u6m6.onrender.com'
-  }
-};
+// API Configuration
+export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-// Get current environment, defaults to 'development' if not set
-const env = process.env.NODE_ENV || 'development';
-
-// Export the configuration for the current environment
-export default config[env]; 
+// Other configuration constants can be added here 

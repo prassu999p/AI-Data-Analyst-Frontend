@@ -5,6 +5,9 @@ export const sendQuery = async (data) => {
     const response = await axiosInstance.post('/query', data);
     return response.data;
   } catch (error) {
+    if (error.response?.data) {
+      throw new Error(error.response.data);
+    }
     throw error;
   }
 };
