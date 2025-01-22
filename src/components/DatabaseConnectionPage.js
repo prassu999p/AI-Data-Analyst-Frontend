@@ -18,9 +18,7 @@ const DatabaseConnectionPage = () => {
         setIsLoading(true);
         try {
             const result = await dbConnectionService.getConnections();
-            // Check if result has the expected structure
-            const connectionsList = result?.data || [];
-            setConnections(connectionsList);
+            setConnections(result.data || []);
         } catch (error) {
             console.error('Failed to load connections:', error);
             toast.error('Failed to load connections');

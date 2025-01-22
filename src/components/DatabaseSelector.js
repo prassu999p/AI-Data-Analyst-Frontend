@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { dbConnectionService } from '../services/dbConnections';
 import { toast } from 'react-toastify';
+import './DatabaseSelector.css';
 
 const DatabaseSelector = ({ onConnectionSelect, selectedConnectionId }) => {
     const [connections, setConnections] = useState([]);
@@ -15,6 +16,11 @@ const DatabaseSelector = ({ onConnectionSelect, selectedConnectionId }) => {
             const result = await dbConnectionService.getConnections();
             const connectionsList = result?.data || [];
             setConnections(connectionsList);
+            
+            // If there's only one connection and no selection, auto-select it
+            if (connectionsList.length === 1 && !selectedConnectionId) {
+                handleConnectionSelect(connectionsList[0]);
+            }
         } catch (error) {
             console.error('Failed to load connections:', error);
             toast.error('Failed to load database connections');
@@ -24,22 +30,56 @@ const DatabaseSelector = ({ onConnectionSelect, selectedConnectionId }) => {
         }
     };
 
-    const handleChange = async (e) => {
-        const connectionId = parseInt(e.target.value);
-        if (connectionId) {
-            try {
-                const result = await dbConnectionService.getConnection(connectionId);
+    const handleConnectionSelect = async (connection) => {
+        if (!connection) {
+            onConnectionSelect(null);
+            return;
+        }
+
+        try {
+            // Load full connection details
+            const result = await dbConnectionService.getConnection(connection.id);
+            if (result.data) {
                 onConnectionSelect(result.data);
-            } catch (error) {
+            } else {
                 toast.error('Failed to load connection details');
+                onConnectionSelect(null);
             }
-        } else {
+        } catch (error) {
+            console.error('Failed to load connection details:', error);
+            toast.error('Failed to load connection details');
             onConnectionSelect(null);
         }
     };
 
+    const handleChange = (e) => {
+        const connectionId = e.target.value;
+        if (!connectionId) {
+            onConnectionSelect(null);
+            return;
+        }
+
+        const selectedConnection = connections.find(conn => conn.id === connectionId);
+        if (selectedConnection) {
+            handleConnectionSelect(selectedConnection);
+        }
+    };
+
     if (isLoading) {
-        return <div className="loading">Loading connections...</div>;
+        return (
+            <div className="database-selector loading">
+                <div className="spinner"></div>
+                <span>Loading connections...</span>
+            </div>
+        );
+    }
+
+    if (!connections.length) {
+        return (
+            <div className="database-selector empty">
+                <p>No database connections available. Please add a connection first.</p>
+            </div>
+        );
     }
 
     return (
@@ -52,7 +92,7 @@ const DatabaseSelector = ({ onConnectionSelect, selectedConnectionId }) => {
                 <option value="">Select Database Connection</option>
                 {connections.map(conn => (
                     <option key={conn.id} value={conn.id}>
-                        {conn.name}
+                        {conn.name} ({conn.type} - {conn.database})
                     </option>
                 ))}
             </select>
