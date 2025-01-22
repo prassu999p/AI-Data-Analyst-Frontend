@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../config';
 export const dbConnectionService = {
     testConnection: async (connectionData) => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/connections/test`, connectionData);
+            const response = await axios.post(`${API_BASE_URL}/test-connection`, connectionData);
             return response.data;
         } catch (error) {
             throw error.response?.data || error.message;
