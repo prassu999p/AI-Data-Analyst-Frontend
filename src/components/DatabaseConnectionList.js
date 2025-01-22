@@ -2,7 +2,7 @@ import React from 'react';
 import { dbConnectionService } from '../services/dbConnections';
 import { toast } from 'react-toastify';
 
-const DatabaseConnectionList = ({ connections, onConnectionDeleted, onEditConnection }) => {
+const DatabaseConnectionList = ({ connections, onConnectionDeleted, onEditConnection, onConnectionSelected, selectedConnectionId }) => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this connection?')) {
             try {
@@ -12,7 +12,8 @@ const DatabaseConnectionList = ({ connections, onConnectionDeleted, onEditConnec
                     onConnectionDeleted(id);
                 }
             } catch (error) {
-                toast.error(`Failed to delete connection: ${error.detail || error}`);
+                console.error('Failed to delete connection:', error);
+                toast.error(`Failed to delete connection: ${error.message || 'Unknown error'}`);
             }
         }
     };
@@ -28,21 +29,31 @@ const DatabaseConnectionList = ({ connections, onConnectionDeleted, onEditConnec
     return (
         <div className="connections-list">
             {connections.map((connection) => (
-                <div key={connection.id} className="connection-item">
+                <div 
+                    key={connection.id} 
+                    className={`connection-item ${selectedConnectionId === connection.id ? 'selected' : ''}`}
+                    onClick={() => onConnectionSelected && onConnectionSelected(connection)}
+                >
                     <div className="connection-info">
                         <h3>{connection.name}</h3>
-                        <p>{connection.host}:{connection.port} - {connection.database}</p>
+                        <p>{connection.type} - {connection.host}:{connection.port} - {connection.database}</p>
                     </div>
                     <div className="connection-actions">
                         <button 
-                            className="edit-btn"
-                            onClick={() => onEditConnection(connection)}
+                            className="edit-button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onEditConnection(connection);
+                            }}
                         >
                             Edit
                         </button>
                         <button 
-                            className="delete-btn"
-                            onClick={() => handleDelete(connection.id)}
+                            className="delete-button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(connection.id);
+                            }}
                         >
                             Delete
                         </button>
