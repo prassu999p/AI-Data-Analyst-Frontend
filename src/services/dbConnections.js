@@ -5,7 +5,7 @@ export const dbConnectionService = {
     testConnection: async (connectionData) => {
         try {
             const response = await axios.post(`${API_BASE_URL}/test-connection`, connectionData);
-            return response.data;
+            return { data: response.data };
         } catch (error) {
             throw error.response?.data || error.message;
         }
@@ -14,7 +14,7 @@ export const dbConnectionService = {
     addConnection: async (connectionData) => {
         try {
             const response = await axios.post(`${API_BASE_URL}/connections`, connectionData);
-            return response.data;
+            return { data: response.data };
         } catch (error) {
             throw error.response?.data || error.message;
         }
@@ -23,7 +23,7 @@ export const dbConnectionService = {
     updateConnection: async (id, connectionData) => {
         try {
             const response = await axios.put(`${API_BASE_URL}/connections/${id}`, connectionData);
-            return response.data;
+            return { data: response.data };
         } catch (error) {
             throw error.response?.data || error.message;
         }
@@ -32,7 +32,7 @@ export const dbConnectionService = {
     getConnections: async () => {
         try {
             const response = await axios.get(`${API_BASE_URL}/connections`);
-            return response.data;
+            return { data: response.data };
         } catch (error) {
             throw error.response?.data || error.message;
         }
@@ -41,7 +41,7 @@ export const dbConnectionService = {
     getConnection: async (id) => {
         try {
             const response = await axios.get(`${API_BASE_URL}/connections/${id}`);
-            return response.data;
+            return { data: response.data };
         } catch (error) {
             throw error.response?.data || error.message;
         }
@@ -50,7 +50,7 @@ export const dbConnectionService = {
     deleteConnection: async (id) => {
         try {
             const response = await axios.delete(`${API_BASE_URL}/connections/${id}`);
-            return response.data;
+            return { data: response.data };
         } catch (error) {
             throw error.response?.data || error.message;
         }
