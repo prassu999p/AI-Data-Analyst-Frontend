@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { dbConnectionService } from '../services/dbConnections';
+import { getDatabaseConnections, getConnection, testDatabaseConnection } from '../lib/supabase';
 import { toast } from 'react-toastify';
 import './DatabaseSelector.css';
 
-const DatabaseSelector = ({ onConnectionSelect, selectedConnectionId }) => {
+const DatabaseSelector = ({ onConnectionSelect, selectedConnectionId, connection }) => {
     const [connections, setConnections] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isTesting, setIsTesting] = useState(false);
 
     useEffect(() => {
         loadConnections();
@@ -13,14 +14,9 @@ const DatabaseSelector = ({ onConnectionSelect, selectedConnectionId }) => {
 
     const loadConnections = async () => {
         try {
-            const result = await dbConnectionService.getConnections();
-            const connectionsList = result?.data || [];
-            setConnections(connectionsList);
-            
-            // If there's only one connection and no selection, auto-select it
-            if (connectionsList.length === 1 && !selectedConnectionId) {
-                handleConnectionSelect(connectionsList[0]);
-            }
+            const { data, error } = await getDatabaseConnections();
+            if (error) throw error;
+            setConnections(data || []);
         } catch (error) {
             console.error('Failed to load connections:', error);
             toast.error('Failed to load database connections');
@@ -30,72 +26,77 @@ const DatabaseSelector = ({ onConnectionSelect, selectedConnectionId }) => {
         }
     };
 
-    const handleConnectionSelect = async (connection) => {
-        if (!connection) {
-            onConnectionSelect(null);
-            return;
-        }
-
-        try {
-            // Load full connection details
-            const result = await dbConnectionService.getConnection(connection.id);
-            if (result.data) {
-                onConnectionSelect(result.data);
-            } else {
+    const handleChange = async (e) => {
+        const connectionId = e.target.value;
+        if (connectionId) {
+            try {
+                const { data, error } = await getConnection(connectionId);
+                if (error) throw error;
+                onConnectionSelect(data);
+            } catch (error) {
                 toast.error('Failed to load connection details');
-                onConnectionSelect(null);
             }
-        } catch (error) {
-            console.error('Failed to load connection details:', error);
-            toast.error('Failed to load connection details');
+        } else {
             onConnectionSelect(null);
         }
     };
 
-    const handleChange = (e) => {
-        const connectionId = e.target.value;
-        if (!connectionId) {
-            onConnectionSelect(null);
+    const handleTestConnection = async () => {
+        if (!connection) {
+            toast.warn('Please select a connection to test');
             return;
         }
 
-        const selectedConnection = connections.find(conn => conn.id === connectionId);
-        if (selectedConnection) {
-            handleConnectionSelect(selectedConnection);
+        setIsTesting(true);
+        try {
+            const { data, error } = await testDatabaseConnection({
+                type: connection.type,
+                host: connection.host,
+                port: connection.port,
+                database_name: connection.database_name,
+                username: connection.username,
+                password: connection.password
+            });
+            
+            if (error) throw error;
+            toast.success(data.message || 'Connection test successful!');
+        } catch (error) {
+            console.error('Connection test failed:', error);
+            toast.error(error.message || 'Connection test failed');
+        } finally {
+            setIsTesting(false);
         }
     };
 
     if (isLoading) {
-        return (
-            <div className="database-selector loading">
-                <div className="spinner"></div>
-                <span>Loading connections...</span>
-            </div>
-        );
-    }
-
-    if (!connections.length) {
-        return (
-            <div className="database-selector empty">
-                <p>No database connections available. Please add a connection first.</p>
-            </div>
-        );
+        return <div className="loading">Loading connections...</div>;
     }
 
     return (
         <div className="database-selector">
-            <select
-                value={selectedConnectionId || ''}
-                onChange={handleChange}
-                className="connection-select"
-            >
-                <option value="">Select Database Connection</option>
-                {connections.map(conn => (
-                    <option key={conn.id} value={conn.id}>
-                        {conn.name} ({conn.type} - {conn.database})
-                    </option>
-                ))}
-            </select>
+            <div className="selector-container">
+                <select
+                    value={selectedConnectionId || ''}
+                    onChange={handleChange}
+                    className="connection-select"
+                >
+                    <option value="">Select Database Connection</option>
+                    {connections.map(conn => (
+                        <option key={conn.id} value={conn.id}>
+                            {conn.name} ({conn.type} - {conn.database_name})
+                        </option>
+                    ))}
+                </select>
+                {connection && (
+                    <button
+                        onClick={handleTestConnection}
+                        disabled={isTesting}
+                        className={`test-button ${isTesting ? 'testing' : ''}`}
+                    >
+                        {isTesting ? 'Testing...' : 'Test Connection'}
+                    </button>
+                )}
+            </div>
         </div>
     );
 };

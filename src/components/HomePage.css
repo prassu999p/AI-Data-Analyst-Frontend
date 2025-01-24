@@ -1,0 +1,239 @@
+.home-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.home-container h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 2rem;
+}
+
+.query-section {
+    background: white;
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.database-selection {
+    margin-bottom: 1.5rem;
+}
+
+.query-input-container {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.query-input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.query-input:focus {
+    outline: none;
+    border-color: #0066cc;
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+.ask-button {
+    padding: 0.75rem 2rem;
+    background-color: #0066cc;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.ask-button:hover:not(:disabled) {
+    background-color: #0052a3;
+}
+
+.ask-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.ask-button.loading {
+    position: relative;
+    padding-left: 2.5rem;
+}
+
+.ask-button.loading::before {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.loading-overlay {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    color: #666;
+}
+
+.loading-spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 3px solid rgba(0, 102, 204, 0.2);
+    border-top-color: #0066cc;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.result-container {
+    padding: 1rem;
+}
+
+.answer-text {
+    font-size: 1.1rem;
+    line-height: 1.5;
+    color: #333;
+    margin-bottom: 1.5rem;
+}
+
+.sql-query {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+}
+
+.sql-query h4 {
+    margin: 0 0 0.5rem 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.sql-query pre {
+    margin: 0;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+    color: #333;
+}
+
+.visualization-options {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.option-group {
+    flex: 1;
+}
+
+.option-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.option-group select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    background-color: white;
+}
+
+.option-group select:focus {
+    outline: none;
+    border-color: #0066cc;
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+.visualization-container {
+    margin-top: 2rem;
+    min-height: 400px;
+    background: white;
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chart-container {
+    margin-top: 1.5rem;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 1rem;
+    background: white;
+}
+
+.chart-container .echarts-for-react {
+    min-height: 400px;
+}
+
+.welcome-message {
+    font-size: 1.125rem;
+    color: #4b5563;
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.action-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    padding: 1rem;
+}
+
+.action-card {
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    border: 1px solid #e5e7eb;
+}
+
+.action-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-color: #2563eb;
+}
+
+.action-card h3 {
+    font-size: 1.25rem;
+    color: #2563eb;
+    margin-bottom: 1rem;
+}
+
+.action-card p {
+    color: #6b7280;
+    line-height: 1.5;
+} 
