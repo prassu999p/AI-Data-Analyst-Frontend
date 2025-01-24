@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import DatabaseSelector from './DatabaseSelector';
 import { queryService } from '../services/queryService';
@@ -7,8 +7,7 @@ import ReactECharts from 'echarts-for-react';
 import './HomePage.css';
 
 const HomePage = () => {
-    // We'll use the user context later for personalization and access control
-    const { user } = useAuth();
+    useAuth(); // Keep the hook call to maintain context subscription
     const [selectedConnection, setSelectedConnection] = useState(null);
     const [query, setQuery] = useState('');
     const [chartType, setChartType] = useState('auto');
@@ -17,16 +16,16 @@ const HomePage = () => {
     const [queryResult, setQueryResult] = useState(null);
     const [chartOptions, setChartOptions] = useState(null);
 
-    // Color palettes
-    const colors = {
+    // Move colors into useMemo to prevent unnecessary recreations
+    const colors = useMemo(() => ({
         warm: ['#ff7f50', '#ff6b6b', '#ffa07a', '#fa8072', '#e9967a'],
         cool: ['#4facfe', '#00f2fe', '#0acffe', '#495aff', '#6a5acd'],
         pastel: ['#ffb3ba', '#bae1ff', '#baffc9', '#ffffba', '#ffdfba'],
         dark: ['#2c3e50', '#34495e', '#7f8c8d', '#95a5a6', '#bdc3c7']
-    };
+    }), []); // Empty dependency array since colors are static
 
-    // Update chart options based on type and palette
-    const updateChartOptions = (chartData, type, palette) => {
+    // Define updateChartOptions with useCallback
+    const updateChartOptions = useCallback((chartData, type, palette) => {
         if (!chartData) return null;
 
         // Extract data from the API response
@@ -193,9 +192,9 @@ const HomePage = () => {
                 // If type is 'auto', use the original chart data
                 return chartData;
         }
-    };
+    }, [colors]); // Add colors as a dependency since it's used inside
 
-    // Update chart when type or palette changes
+    // Use the memoized updateChartOptions in useEffect
     useEffect(() => {
         if (queryResult?.visualization_data) {
             const newOptions = updateChartOptions(
@@ -205,7 +204,7 @@ const HomePage = () => {
             );
             setChartOptions(newOptions);
         }
-    }, [chartType, colorPalette, queryResult]);
+    }, [queryResult, chartType, colorPalette, updateChartOptions]);
 
     const handleAsk = async () => {
         if (!selectedConnection) {

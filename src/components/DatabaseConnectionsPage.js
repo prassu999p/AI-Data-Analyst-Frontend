@@ -94,7 +94,7 @@ const DatabaseConnectionsPage = () => {
 
         try {
             console.log('Submitting connection data...');
-            const { data, error } = await createDatabaseConnection({
+            const { error } = await createDatabaseConnection({
                 ...formData,
                 user_id: user.id
             });
@@ -168,9 +168,9 @@ const DatabaseConnectionsPage = () => {
 
         setIsTesting(true);
         try {
-            const { data, error } = await testDatabaseConnection(formData);
+            const { message, error } = await testDatabaseConnection(formData);
             if (error) throw error;
-            toast.success(data.message || 'Connection test successful!');
+            toast.success(message || 'Connection test successful!');
         } catch (error) {
             toast.error(error.message || 'Failed to test connection');
             console.error('Error testing connection:', error);
