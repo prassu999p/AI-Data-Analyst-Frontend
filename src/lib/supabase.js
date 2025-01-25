@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { encryptSensitiveData, decryptSensitiveData } from '../utils/encryption';
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
 
@@ -11,6 +10,22 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+export const signInWithGoogle = async () => {
+    try {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: `${window.location.origin}/auth/callback`
+            }
+        });
+        if (error) throw error;
+        return { data, error: null };
+    } catch (error) {
+        console.error('Google sign in error:', error);
+        return { data: null, error };
+    }
+};
 
 export const getCurrentUser = async () => {
     try {
@@ -41,6 +56,9 @@ export const signUp = async (email, password) => {
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
+            options: {
+                emailRedirectTo: `${window.location.origin}/auth/callback`
+            }
         });
         if (error) throw error;
         return { data, error: null };
@@ -59,10 +77,9 @@ export const signOut = async () => {
     }
 };
 
-// Function to test database connection
+// Database connection functions
 export const testDatabaseConnection = async (connectionData) => {
     try {
-        // Send the raw connection data for testing
         const response = await axios.post(`${API_BASE_URL}/test-connection`, connectionData);
         return { data: response.data, error: null };
     } catch (error) {
@@ -75,7 +92,6 @@ export const testDatabaseConnection = async (connectionData) => {
     }
 };
 
-// Helper function to handle database connections
 export const getDatabaseConnections = async () => {
     try {
         const { data, error } = await supabase
@@ -84,13 +100,7 @@ export const getDatabaseConnections = async () => {
             .order('created_at', { ascending: false });
 
         if (error) throw error;
-        
-        // Decrypt sensitive data before returning
-        const decryptedData = data.map(connection => 
-            decryptSensitiveData(connection)
-        );
-        
-        return { data: decryptedData, error: null };
+        return { data, error: null };
     } catch (error) {
         return { data: null, error };
     }
@@ -98,19 +108,14 @@ export const getDatabaseConnections = async () => {
 
 export const createDatabaseConnection = async (connectionData) => {
     try {
-        // Log the incoming data (without sensitive info)
         console.log('Creating connection for:', {
             ...connectionData,
             password: '[REDACTED]'
         });
 
-        // Encrypt sensitive data before storing
-        const encryptedData = encryptSensitiveData(connectionData);
-        
-        console.log('Attempting to insert connection into Supabase');
         const { data, error } = await supabase
             .from('user_connections')
-            .insert([encryptedData])
+            .insert([connectionData])
             .select()
             .single();
 
@@ -133,20 +138,6 @@ export const createDatabaseConnection = async (connectionData) => {
     }
 };
 
-export const deleteDatabaseConnection = async (connectionId) => {
-    try {
-        const { error } = await supabase
-            .from('user_connections')
-            .delete()
-            .eq('id', connectionId);
-
-        if (error) throw error;
-        return { error: null };
-    } catch (error) {
-        return { error };
-    }
-};
-
 export const getConnection = async (id) => {
     try {
         const { data, error } = await supabase
@@ -156,12 +147,28 @@ export const getConnection = async (id) => {
             .single();
 
         if (error) throw error;
-        
-        // Decrypt sensitive data before returning
-        const decryptedData = decryptSensitiveData(data);
-        
-        return { data: decryptedData, error: null };
+        return { data, error: null };
     } catch (error) {
         return { data: null, error };
+    }
+};
+
+export const deleteDatabaseConnection = async (id) => {
+    try {
+        const { error } = await supabase
+            .from('user_connections')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+        return { error: null };
+    } catch (error) {
+        console.error('Failed to delete connection:', error);
+        return { 
+            error: {
+                message: error.message || 'Failed to delete connection',
+                details: error.details || error.hint || ''
+            }
+        };
     }
 }; 

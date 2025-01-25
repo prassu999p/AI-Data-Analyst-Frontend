@@ -7,17 +7,12 @@ const ProtectedRoute = ({ children }) => {
     const location = useLocation();
 
     if (loading) {
-        return (
-            <div className="loading-screen">
-                <div className="loading-spinner"></div>
-                <p>Loading...</p>
-            </div>
-        );
+        return <div>Loading...</div>;
     }
 
     if (!user) {
         // Redirect to login but save the attempted location
-        return <Navigate to="/login" state={{ from: location }} replace />;
+        return <Navigate to="/auth/login" state={{ from: location }} replace />;
     }
 
     return children;

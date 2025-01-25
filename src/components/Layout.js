@@ -12,11 +12,15 @@ const Layout = () => {
     const handleSignOut = async () => {
         try {
             await signOut();
-            navigate('/login');
+            navigate('/auth/login');
             toast.success('Logged out successfully');
         } catch (error) {
             toast.error('Failed to log out');
         }
+    };
+
+    const handleSignIn = () => {
+        navigate('/auth/login');
     };
 
     return (
@@ -34,21 +38,42 @@ const Layout = () => {
                     >
                         Home
                     </NavLink>
-                    <NavLink 
-                        to="/connections"
-                        className={({ isActive }) => `nav-button ${isActive ? 'active' : ''}`}
-                    >
-                        Database Connections
-                    </NavLink>
+                    {user && (
+                        <NavLink 
+                            to="/connections"
+                            className={({ isActive }) => `nav-button ${isActive ? 'active' : ''}`}
+                        >
+                            Database Connections
+                        </NavLink>
+                    )}
                 </nav>
                 <div className="user-section">
-                    <span className="user-email">{user?.email}</span>
-                    <button 
-                        onClick={handleSignOut}
-                        className="sign-out-button"
-                    >
-                        Sign Out
-                    </button>
+                    {user ? (
+                        <>
+                            <span className="user-email">{user.email}</span>
+                            <button 
+                                onClick={handleSignOut}
+                                className="auth-button sign-out"
+                            >
+                                Sign Out
+                            </button>
+                        </>
+                    ) : (
+                        <div className="auth-buttons">
+                            <button 
+                                onClick={handleSignIn}
+                                className="auth-button sign-in"
+                            >
+                                Sign in with Google
+                            </button>
+                            <button 
+                                onClick={handleSignIn}
+                                className="auth-button sign-up"
+                            >
+                                Sign Up
+                            </button>
+                        </div>
+                    )}
                 </div>
             </header>
 

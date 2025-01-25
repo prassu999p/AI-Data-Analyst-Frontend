@@ -1,0 +1,43 @@
+.auth-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-email {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.auth-button {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.auth-button.sign-in {
+    background-color: #ff4757;
+    color: white;
+}
+
+.auth-button.sign-out {
+    background-color: transparent;
+    border: 1px solid #ff4757;
+    color: #ff4757;
+}
+
+.auth-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.auth-button.sign-in:hover {
+    background-color: #ff5e6c;
+}
+
+.auth-button.sign-out:hover {
+    background-color: #fff1f3;
+} 
