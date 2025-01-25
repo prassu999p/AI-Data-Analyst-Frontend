@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase, getCurrentUser } from '../lib/supabase';
+// eslint-disable-next-line
 import { toast } from 'react-toastify';
 
 const AuthContext = createContext({});
