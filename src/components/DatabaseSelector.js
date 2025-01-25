@@ -34,7 +34,9 @@ const DatabaseSelector = ({ onConnectionSelect, selectedConnectionId, connection
                 if (error) throw error;
                 onConnectionSelect(data);
             } catch (error) {
+                console.error('Failed to load connection:', error);
                 toast.error('Failed to load connection details');
+                onConnectionSelect(null);
             }
         } else {
             onConnectionSelect(null);
@@ -55,11 +57,20 @@ const DatabaseSelector = ({ onConnectionSelect, selectedConnectionId, connection
                 port: connection.port,
                 database_name: connection.database_name,
                 username: connection.username,
-                password: connection.password
+                password: connection.password,
+                ssl: {
+                    rejectUnauthorized: false,
+                    sslmode: 'require'
+                }
             });
             
             if (error) throw error;
-            toast.success(data.message || 'Connection test successful!');
+            
+            if (data.version) {
+                toast.success(`Connected successfully to ${connection.type} database (${data.version})`);
+            } else {
+                toast.success(data.message || 'Connection test successful!');
+            }
         } catch (error) {
             console.error('Connection test failed:', error);
             toast.error(error.message || 'Connection test failed');
@@ -97,6 +108,13 @@ const DatabaseSelector = ({ onConnectionSelect, selectedConnectionId, connection
                     </button>
                 )}
             </div>
+            {connection && (
+                <div className="connection-info">
+                    <p>Type: {connection.type}</p>
+                    <p>Host: {connection.host}</p>
+                    <p>Database: {connection.database_name}</p>
+                </div>
+            )}
         </div>
     );
 };
