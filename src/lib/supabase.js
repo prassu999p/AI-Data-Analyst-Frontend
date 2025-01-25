@@ -11,6 +11,22 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+export const signInWithGoogle = async () => {
+    try {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: `${window.location.origin}/auth/callback`
+            }
+        });
+        if (error) throw error;
+        return { data, error: null };
+    } catch (error) {
+        console.error('Google sign in error:', error);
+        return { data: null, error };
+    }
+};
+
 export const getCurrentUser = async () => {
     try {
         const { data: { user }, error } = await supabase.auth.getUser();
@@ -40,6 +56,9 @@ export const signUp = async (email, password) => {
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
+            options: {
+                emailRedirectTo: `${window.location.origin}/auth/callback`
+            }
         });
         if (error) throw error;
         return { data, error: null };
@@ -58,7 +77,7 @@ export const signOut = async () => {
     }
 };
 
-// Function to test database connection
+// Database connection functions
 export const testDatabaseConnection = async (connectionData) => {
     try {
         const response = await axios.post(`${API_BASE_URL}/test-connection`, connectionData);
@@ -73,22 +92,6 @@ export const testDatabaseConnection = async (connectionData) => {
     }
 };
 
-// Function to execute a query
-export const executeQuery = async (queryData) => {
-    try {
-        const response = await axios.post(`${API_BASE_URL}/query`, queryData);
-        return { data: response.data, error: null };
-    } catch (error) {
-        return {
-            data: null,
-            error: {
-                message: error.response?.data?.detail || error.message || 'Failed to execute query'
-            }
-        };
-    }
-};
-
-// Helper function to handle database connections from Supabase
 export const getDatabaseConnections = async () => {
     try {
         const { data, error } = await supabase
@@ -105,7 +108,6 @@ export const getDatabaseConnections = async () => {
 
 export const createDatabaseConnection = async (connectionData) => {
     try {
-        // Log the incoming data (without sensitive info)
         console.log('Creating connection for:', {
             ...connectionData,
             password: '[REDACTED]'
@@ -151,12 +153,12 @@ export const getConnection = async (id) => {
     }
 };
 
-export const deleteDatabaseConnection = async (connectionId) => {
+export const deleteDatabaseConnection = async (id) => {
     try {
         const { error } = await supabase
             .from('user_connections')
             .delete()
-            .eq('id', connectionId);
+            .eq('id', id);
 
         if (error) throw error;
         return { error: null };

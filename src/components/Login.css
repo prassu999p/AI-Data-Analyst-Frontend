@@ -1,0 +1,139 @@
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f8f9fa;
+    padding: 1rem;
+}
+
+.login-box {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+h2 {
+    margin: 0;
+    color: #2d3436;
+    text-align: center;
+}
+
+.subtitle {
+    color: #636e72;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #2d3436;
+    font-weight: 500;
+}
+
+input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #dfe6e9;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+input:focus {
+    outline: none;
+    border-color: #ff4757;
+    box-shadow: 0 0 0 2px rgba(255, 71, 87, 0.2);
+}
+
+.submit-button {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #ff4757;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.submit-button:hover {
+    background-color: #ff5e6c;
+}
+
+.submit-button:disabled {
+    background-color: #b2bec3;
+    cursor: not-allowed;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #dfe6e9;
+}
+
+.divider span {
+    padding: 0 1rem;
+    color: #636e72;
+    font-size: 0.9rem;
+}
+
+.google-button {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: white;
+    border: 1px solid #dfe6e9;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.google-button:hover {
+    background-color: #f8f9fa;
+}
+
+.google-icon {
+    width: 18px;
+    height: 18px;
+}
+
+.toggle-text {
+    text-align: center;
+    margin-top: 1.5rem;
+    color: #636e72;
+}
+
+.toggle-button {
+    background: none;
+    border: none;
+    color: #ff4757;
+    cursor: pointer;
+    font-weight: 500;
+    padding: 0;
+    margin-left: 0.25rem;
+}
+
+.toggle-button:hover {
+    text-decoration: underline;
+} 

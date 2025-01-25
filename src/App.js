@@ -5,7 +5,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
-import LoginPage from './components/LoginPage';
+import Login from './components/Login';
+import AuthCallback from './components/AuthCallback';
 import HomePage from './components/HomePage';
 import DatabaseConnectionsPage from './components/DatabaseConnectionsPage';
 import './App.css';
@@ -16,13 +17,28 @@ function App() {
             <Router>
                 <ToastContainer position="top-right" />
                 <Routes>
-                    <Route path="/login" element={<LoginPage />} />
-                    
-                    <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                    {/* Public Routes */}
+                    <Route path="/" element={<Layout />}>
                         <Route index element={<HomePage />} />
-                        <Route path="connections" element={<DatabaseConnectionsPage />} />
-                        <Route path="*" element={<Navigate to="/" replace />} />
                     </Route>
+
+                    {/* Auth Routes */}
+                    <Route path="/auth">
+                        <Route path="login" element={<Login />} />
+                        <Route path="callback" element={<AuthCallback />} />
+                    </Route>
+
+                    {/* Protected Routes */}
+                    <Route path="/connections" element={
+                        <ProtectedRoute>
+                            <Layout />
+                        </ProtectedRoute>
+                    }>
+                        <Route index element={<DatabaseConnectionsPage />} />
+                    </Route>
+
+                    {/* Fallback */}
+                    <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </Router>
         </AuthProvider>
